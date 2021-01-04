@@ -187,6 +187,7 @@ namespace CCDDisplay
                 {
                     StringBuilder sb = new StringBuilder();
                     sb.AppendLine("Driver Information:");
+                    sb.AppendFormat("\tDriver:           {0}\r\n", _display.GetType().AssemblyQualifiedName);
                     sb.AppendFormat("\tBase Model:       {0}\r\n", _display.BaseModel);
                     sb.AppendFormat("\tDescription:      {0}\r\n", _display.Description);
                     sb.AppendFormat("\tDriver Version:   {0}\r\n", _display.DriverVersion);
@@ -498,22 +499,27 @@ namespace CCDDisplay
             Debug.Console(1, "Linking to Trilist '{0}'", trilist.ID.ToString("X"));
             Debug.Console(0, "Linking to Bridge Type {0}", GetType().Name);
 
-            // TODO [ ] Implement bridge links as needed
-
             // links to bridge
-            trilist.SetString(joinMap.DeviceName.JoinNumber, Name);
-            trilist.SetBoolSigAction(joinMap.Connect.JoinNumber, sig => Connect = sig);
 
+            /// eJoinCapabilities.ToFromSIMPL - FromSIMPL action
+            trilist.SetBoolSigAction(joinMap.Connect.JoinNumber, sig => Connect = sig);
+            /// eJoinCapabilities.ToFromSIMPL - ToSIMPL subscription
             ConnectFeedback.LinkInputSig(trilist.BooleanInput[joinMap.Connect.JoinNumber]);
+
+            /// eJoinCapabilities.ToFromSIMPL - ToSIMPL subscription
             StatusFeedback.LinkInputSig(trilist.UShortInput[joinMap.Status.JoinNumber]);
+
+            /// eJoinCapabilities.ToSIMPL - set string once as this is not changeble info
+            trilist.SetString(joinMap.Driver.JoinNumber, _display.GetType().AssemblyQualifiedName);
 
             UpdateFeedbacks();
 
+            /// Propagate String/Serial values through eisc when it becomes online 
             trilist.OnlineStatusChange += (o, a) =>
             {
                 if (!a.DeviceOnLine) return;
 
-                trilist.SetString(joinMap.DeviceName.JoinNumber, Name);
+                trilist.SetString(joinMap.Driver.JoinNumber, _display.GetType().AssemblyQualifiedName);
                 UpdateFeedbacks();
             };
         }

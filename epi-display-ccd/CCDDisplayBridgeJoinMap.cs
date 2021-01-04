@@ -14,22 +14,6 @@ namespace CCDDisplay
 	{
 		#region Digital
 
-		// TODO: IsOnline signal is already defined in DisplayControllerJoinMap
-        /*
-		[JoinName("IsOnline")]
-		public JoinDataComplete IsOnline = new JoinDataComplete(
-			new JoinData
-			{
-				JoinNumber = 1,
-				JoinSpan = 1
-			},
-			new JoinMetadata
-			{
-				Description = "Is Online",
-				JoinCapabilities = eJoinCapabilities.ToSIMPL,
-				JoinType = eJoinType.Digital
-			});
-        */
 		[JoinName("Connect")]
 		public JoinDataComplete Connect = new JoinDataComplete(
 			new JoinData
@@ -48,8 +32,6 @@ namespace CCDDisplay
 
 
 		#region Analog
-
-		// TODO [ ] Add analog joins below plugin being developed
 
 		[JoinName("Status")]
 		public JoinDataComplete Status = new JoinDataComplete(
@@ -70,10 +52,8 @@ namespace CCDDisplay
 
 		#region Serial
 
-		// TODO [ ] Add serial joins below plugin being developed
-
-        [JoinName("DeviceName")]
-		public JoinDataComplete DeviceName = new JoinDataComplete(
+        [JoinName("Driver")]
+		public JoinDataComplete Driver = new JoinDataComplete(
 			new JoinData
 			{
 				JoinNumber = 52,
@@ -81,7 +61,7 @@ namespace CCDDisplay
 			},
 			new JoinMetadata
 			{
-				Description = "Device Name",
+				Description = "Driver",
 				JoinCapabilities = eJoinCapabilities.ToSIMPL,
 				JoinType = eJoinType.Serial
 			});
