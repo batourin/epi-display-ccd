@@ -10,6 +10,33 @@ Implementation of the Essential plugin to bridge Crestron Certified Drivers that
 
 Plugin adds some informational Console commands in format <key><command>: INFO, INPUTS
 
+Example of usage in the configuration file:
+      {
+        "key": "lcd",
+        "uid": 10,
+        "name": "LCD TV",
+        "type": "ccddisplay",
+        "group": "display",
+        "properties": {
+          "id": 0,
+          "driver": "\\user\\FlatPanelDisplay_Sharp_LC-52LE640U_Serial.dll",
+          "transport":"ISerialComport", 
+          "control": {
+            "comParams": {
+              "hardwareHandshake": "None",
+              "parity": "None",
+              "protocol": "RS232",
+              "baudRate": 9600,
+              "dataBits": 8,
+              "softwareHandshake": "None",
+              "stopBits": 1
+            },
+            "controlPortNumber": 1,
+            "controlPortDevKey": "dmRmc4k100C",
+            "method": "Com"
+          }
+        }
+
 ## Cloning Instructions
 
 After forking this repository into your own GitHub space, you can create a new repository using this one as the template.  Then you must install the necessary dependencies as indicated below.
