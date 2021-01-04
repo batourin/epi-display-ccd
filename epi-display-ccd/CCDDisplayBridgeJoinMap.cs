@@ -1,4 +1,5 @@
 ﻿using PepperDash.Essentials.Core;
+using PepperDash.Essentials.Core.Bridges;
 
 namespace CCDDisplay
 {
@@ -9,15 +10,12 @@ namespace CCDDisplay
 	/// Rename the class to match the device plugin being developed.  Reference Essentials JoinMaps, if one exists for the device plugin being developed
 	/// </remarks>
 	/// <see cref="PepperDash.Essentials.Core.Bridges"/>
-	/// <example>
-	/// "CCDDisplayBridgeJoinMap" renamed to "SamsungMdcBridgeJoinMap"
-	/// </example>
-	public class CCDDisplayBridgeJoinMap : JoinMapBaseAdvanced
+    public class CCDDisplayBridgeJoinMap : DisplayControllerJoinMap
 	{
 		#region Digital
 
-		// TODO [ ] Add digital joins below plugin being developed
-
+		// TODO: IsOnline signal is already defined in DisplayControllerJoinMap
+        /*
 		[JoinName("IsOnline")]
 		public JoinDataComplete IsOnline = new JoinDataComplete(
 			new JoinData
@@ -31,7 +29,7 @@ namespace CCDDisplay
 				JoinCapabilities = eJoinCapabilities.ToSIMPL,
 				JoinType = eJoinType.Digital
 			});
-
+        */
 		[JoinName("Connect")]
 		public JoinDataComplete Connect = new JoinDataComplete(
 			new JoinData
@@ -62,7 +60,7 @@ namespace CCDDisplay
 			},
 			new JoinMetadata
 			{
-				Description = "Socket Status",
+				Description = "Communication Status",
 				JoinCapabilities = eJoinCapabilities.ToSIMPL,
 				JoinType = eJoinType.Analog
 			});
@@ -74,6 +72,7 @@ namespace CCDDisplay
 
 		// TODO [ ] Add serial joins below plugin being developed
 
+        [JoinName("DeviceName")]
 		public JoinDataComplete DeviceName = new JoinDataComplete(
 			new JoinData
 			{

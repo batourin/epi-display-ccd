@@ -48,6 +48,7 @@ namespace CCDDisplay
 
             _config = config;
             _display = display;
+            _displayStateChangeAction = new Action<DisplayStateObjects, IBasicVideoDisplay, byte>(displayStateChangeEvent);
 
             // Set Display Id
             _display.Id = _config.Id;
@@ -69,12 +70,12 @@ namespace CCDDisplay
             catch (Exception) { }
 
             ConnectFeedback = new BoolFeedback(() => Connect);
-            OnlineFeedback = new BoolFeedback(() => _display.Connected);
             StatusFeedback = new IntFeedback(() => (int)CommunicationMonitor.Status);
+            Feedbacks.Add(ConnectFeedback);
+            Feedbacks.Add(StatusFeedback);
 
             VolumeLevelFeedback = new IntFeedback(() => { return (int)_display.VolumePercent; });
             MuteFeedback = new BoolFeedback(() => _display.Muted);
-
             Feedbacks.Add(VolumeLevelFeedback);
             Feedbacks.Add(MuteFeedback);
 
@@ -179,8 +180,6 @@ namespace CCDDisplay
             // TODO: Figure out what is Outport for display device, do we need it?
             OutputPorts = new RoutingPortCollection<RoutingOutputPort>();
             OutputPorts.Add(new RoutingOutputPort("Screen", eRoutingSignalType.AudioVideo, eRoutingPortConnectionType.BackplaneOnly, null, this));
-
-            _displayStateChangeAction = new Action<DisplayStateObjects, IBasicVideoDisplay, byte>(displayStateChangeEvent);
 
             CommunicationMonitor = new CCDCommunicationMonitor(this, _display, 12000, 30000);
 
@@ -465,11 +464,6 @@ namespace CCDDisplay
         public BoolFeedback ConnectFeedback { get; private set; }
 
         /// <summary>
-        /// Reports online feedback through the bridge
-        /// </summary>
-        public BoolFeedback OnlineFeedback { get; private set; }
-
-        /// <summary>
         /// Reports socket status feedback through the bridge
         /// </summary>
         public IntFeedback StatusFeedback { get; private set; }
@@ -483,8 +477,6 @@ namespace CCDDisplay
         /// <param name="bridge"></param>
         public void LinkToApi(BasicTriList trilist, uint joinStart, string joinMapKey, EiscApiAdvanced bridge)
         {
-            LinkDisplayToApi(this, trilist, joinStart, joinMapKey, bridge);
-
             var joinMap = new CCDDisplayBridgeJoinMap(joinStart);
 
             // This adds the join map to the collection on the bridge
@@ -507,12 +499,10 @@ namespace CCDDisplay
 
             // links to bridge
             trilist.SetString(joinMap.DeviceName.JoinNumber, Name);
-
             trilist.SetBoolSigAction(joinMap.Connect.JoinNumber, sig => Connect = sig);
-            ConnectFeedback.LinkInputSig(trilist.BooleanInput[joinMap.Connect.JoinNumber]);
 
+            ConnectFeedback.LinkInputSig(trilist.BooleanInput[joinMap.Connect.JoinNumber]);
             StatusFeedback.LinkInputSig(trilist.UShortInput[joinMap.Status.JoinNumber]);
-            OnlineFeedback.LinkInputSig(trilist.BooleanInput[joinMap.IsOnline.JoinNumber]);
 
             UpdateFeedbacks();
 
@@ -523,13 +513,15 @@ namespace CCDDisplay
                 trilist.SetString(joinMap.DeviceName.JoinNumber, Name);
                 UpdateFeedbacks();
             };
+
+            // TODO: figure out how best way to handle base and override class maps and ranges
+            LinkDisplayToApi(this, trilist, joinStart+3, joinMapKey, null);
         }
 
         private void UpdateFeedbacks()
         {
             // TODO [ ] Update as needed for the plugin being developed
             ConnectFeedback.FireUpdate();
-            OnlineFeedback.FireUpdate();
             StatusFeedback.FireUpdate();
         }
 
