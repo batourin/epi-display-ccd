@@ -34,7 +34,7 @@ namespace CCDDisplay
 		public JoinDataComplete Connect = new JoinDataComplete(
 			new JoinData
 			{
-				JoinNumber = 2,
+				JoinNumber = 52,
 				JoinSpan = 1
 			},
 			new JoinMetadata
@@ -55,7 +55,7 @@ namespace CCDDisplay
 		public JoinDataComplete Status = new JoinDataComplete(
 			new JoinData
 			{
-				JoinNumber = 1,
+				JoinNumber = 52,
 				JoinSpan = 1
 			},
 			new JoinMetadata
@@ -76,7 +76,7 @@ namespace CCDDisplay
 		public JoinDataComplete DeviceName = new JoinDataComplete(
 			new JoinData
 			{
-				JoinNumber = 1,
+				JoinNumber = 52,
 				JoinSpan = 1
 			},
 			new JoinMetadata

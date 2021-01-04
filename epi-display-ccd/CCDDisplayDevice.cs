@@ -485,6 +485,9 @@ namespace CCDDisplay
                 bridge.AddJoinMap(Key, joinMap);
             }
 
+            // TODO: figure out how best way to handle base and override class maps and ranges
+            LinkDisplayToApi(this, trilist, joinStart, joinMapKey, null);
+
             var customJoins = JoinMapHelper.TryGetJoinMapAdvancedForDevice(joinMapKey);
 
             if (customJoins != null)
@@ -513,9 +516,6 @@ namespace CCDDisplay
                 trilist.SetString(joinMap.DeviceName.JoinNumber, Name);
                 UpdateFeedbacks();
             };
-
-            // TODO: figure out how best way to handle base and override class maps and ranges
-            LinkDisplayToApi(this, trilist, joinStart+3, joinMapKey, null);
         }
 
         private void UpdateFeedbacks()
