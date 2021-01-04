@@ -53,14 +53,20 @@ namespace CCDDisplay
             _display.Id = _config.Id;
 
             // TODO: Handle Essentials debug logic
-            object debug = Debug.GetDeviceDebugSettingsForKey(key);
-            if (debug != null && false)
+            try
             {
-                _display.EnableLogging = true;
-                _display.EnableRxDebug = true;
-                _display.EnableTxDebug = true;
-                //_display.EnableRxOut = true;
+                /// GetDeviceDebugSettingsForKey will throw KeyNotFoundException if absent 
+                object debug = Debug.GetDeviceDebugSettingsForKey(key);
+                if (debug != null && false)
+                {
+                    _display.EnableLogging = true;
+                    _display.EnableRxDebug = true;
+                    _display.EnableTxDebug = true;
+                    //_display.EnableRxOut = true;
+                }
             }
+            catch (System.Collections.Generic.KeyNotFoundException) { }
+            catch (Exception) { }
 
             ConnectFeedback = new BoolFeedback(() => Connect);
             OnlineFeedback = new BoolFeedback(() => _display.Connected);
@@ -171,6 +177,7 @@ namespace CCDDisplay
             }
 
             // TODO: Figure out what is Outport for display device, do we need it?
+            OutputPorts = new RoutingPortCollection<RoutingOutputPort>();
             OutputPorts.Add(new RoutingOutputPort("Screen", eRoutingSignalType.AudioVideo, eRoutingPortConnectionType.BackplaneOnly, null, this));
 
             _displayStateChangeAction = new Action<DisplayStateObjects, IBasicVideoDisplay, byte>(displayStateChangeEvent);
