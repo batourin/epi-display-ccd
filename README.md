@@ -11,7 +11,8 @@ Implementation of the Essential plugin to bridge Crestron Certified Drivers that
 Plugin adds some informational Console commands in format <key><command>: INFO, INPUTS
 
 Example of usage in the configuration file:
-      {
+```
+       {
         "key": "lcd",
         "uid": 10,
         "name": "LCD TV",
@@ -36,7 +37,7 @@ Example of usage in the configuration file:
             "method": "Com"
           }
         }
-
+```
 ## Cloning Instructions
 
 After forking this repository into your own GitHub space, you can create a new repository using this one as the template.  Then you must install the necessary dependencies as indicated below.
