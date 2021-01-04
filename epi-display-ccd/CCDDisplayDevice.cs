@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Text;
 // For Basic SIMPL# Classes
 // For Basic SIMPL#Pro classes
 using Crestron.SimplSharp;
@@ -53,17 +54,17 @@ namespace CCDDisplay
 
             // TODO: Handle Essentials debug logic
             object debug = Debug.GetDeviceDebugSettingsForKey(key);
-            if (debug != null)
+            if (debug != null && false)
             {
                 _display.EnableLogging = true;
                 _display.EnableRxDebug = true;
                 _display.EnableTxDebug = true;
-                _display.EnableRxOut = true;
+                //_display.EnableRxOut = true;
             }
 
             ConnectFeedback = new BoolFeedback(() => Connect);
             OnlineFeedback = new BoolFeedback(() => _display.Connected);
-            //StatusFeedback = new IntFeedback(() => (int)_commsMonitor.Status);
+            StatusFeedback = new IntFeedback(() => (int)CommunicationMonitor.Status);
 
             VolumeLevelFeedback = new IntFeedback(() => { return (int)_display.VolumePercent; });
             MuteFeedback = new BoolFeedback(() => _display.Muted);
@@ -176,9 +177,57 @@ namespace CCDDisplay
 
             CommunicationMonitor = new CCDCommunicationMonitor(this, _display, 12000, 30000);
 
-            Connect = true;
+            CrestronConsole.AddNewConsoleCommand((s) => 
+                {
+                    StringBuilder sb = new StringBuilder();
+                    sb.AppendLine("Driver Information:");
+                    sb.AppendFormat("\tBase Model:       {0}\r\n", _display.BaseModel);
+                    sb.AppendFormat("\tDescription:      {0}\r\n", _display.Description);
+                    sb.AppendFormat("\tDriver Version:   {0}\r\n", _display.DriverVersion);
+                    sb.AppendFormat("\tGuid:             {0}\r\n", _display.Guid);
+                    sb.AppendFormat("\tManufacturer:     {0}\r\n", _display.Manufacturer);
+                    sb.AppendFormat("\tSupported Models:\r\n");
+                    foreach (string model in _display.SupportedModels)
+                        sb.AppendFormat("\t\t{0}\r\n", model);
+                    sb.AppendFormat("\tSupportedSeries:\r\n");
+                    foreach (string series in _display.SupportedSeries)
+                        sb.AppendFormat("\t\t{0}\r\n", series);
+                    sb.AppendFormat("\tVersionDate:      {0}\r\n", _display.VersionDate);
+                    sb.AppendFormat("\tId:               {0}\r\n", _display.Id);
 
-            CrestronConsole.AddNewConsoleCommand((s) => CrestronConsole.ConsoleCommandResponse("{0}", _display.DriverVersion), "CCDDISPLAYEPI", "Print Driver Info", ConsoleAccessLevelEnum.AccessOperator);
+                    CrestronConsole.ConsoleCommandResponse("{0}", sb.ToString());
+                },
+                Key + "INFO", "Print Driver Info", ConsoleAccessLevelEnum.AccessOperator);
+
+            CrestronConsole.AddNewConsoleCommand((s) =>
+                {
+                    StringBuilder sb = new StringBuilder();
+                    sb.AppendLine("Inputs:");
+                    foreach (var input in _display.GetUsableInputs())
+                    {
+                        sb.AppendFormat("\t{0}: {1} on {2}({3})\r\n", input.Description, input.InputConnector, input.InputType, (int)input.InputType);
+                    }
+                    CrestronConsole.ConsoleCommandResponse(sb.ToString());
+                },
+                Key + "INPUTS", "Display Driver Inputs", ConsoleAccessLevelEnum.AccessOperator);
+
+            CrestronConsole.AddNewConsoleCommand((s) =>
+                {
+                    if (_display.EnableLogging)
+                    {
+                        _display.EnableLogging = false;
+                        _display.EnableRxDebug = false;
+                        _display.EnableTxDebug = false;
+                    }
+                    else
+                    {
+                        _display.EnableLogging = true;
+                        _display.EnableRxDebug = true;
+                        _display.EnableTxDebug = true;
+                    }
+                },
+                Key + "DEBUG", "Display Driver Inputs", ConsoleAccessLevelEnum.AccessOperator);
+
         }
 
         private void displayStateChangeEvent(DisplayStateObjects state, IBasicVideoDisplay display, byte arg3)

@@ -1,4 +1,4 @@
-# Essentials Plugin Template (c) 2020
+# Crestron Certified Display Drivers Essentials Plugin (c) 2020
 
 ## License
 
@@ -6,16 +6,9 @@ Provided under MIT license
 
 ## Overview
 
-Fork this repo when creating a new plugin for Essentials. For more information about plugins, refer to the Essentials Wiki [Plugins](https://github.com/PepperDash/Essentials/wiki/Plugins) article.
+Implementation of the Essential plugin to bridge Crestron Certified Drivers that implement IBasicVideoDisplay interface and one of the transports: ITcp, ISerialComport, ICecDevice
 
-This repo contains example classes for the three main categories of devices:
-* `EssentialsPluginTemplateDevice`: Used for most third party devices which require communication over a streaming mechanism such as a Com port, TCP/SSh/UDP socket, CEC, etc
-* `EssentialsPluginTemplateLogicDevice`:  Used for devices that contain logic, but don't require any communication with third parties outside the program
-* `EssentialsPluginTemplateCrestronDevice`:  Used for devices that represent a piece of Crestron hardware
-
-There are matching factory classes for each of the three categories of devices.  The `EssentialsPluginTemplateConfigObject` should be used as a template and modified for any of the categories of device.  Same goes for the `EssentialsPluginTemplateBridgeJoinMap`.
-
-This also illustrates how a plugin can contain multiple devices.
+Plugin adds some informational Console commands in format <key><command>: INFO, INPUTS
 
 ## Cloning Instructions
 

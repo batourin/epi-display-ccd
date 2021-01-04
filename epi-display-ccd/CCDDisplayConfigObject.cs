@@ -94,36 +94,6 @@ namespace CCDDisplay
         [JsonProperty("transport", Required=Required.Always)]
         public string Transport { get; set; }
 
-        /// <summary>
-		/// Example dictionary of objects
-		/// </summary>
-		/// <remarks>
-		/// This is an example collection configuration object.  This should be modified or deleted as needed for the plugin being built.
-		/// </remarks>
-		/// <example>
-		/// <code>
-		/// "properties": {
-		///		"presets": {
-		///			"preset1": {
-		///				"enabled": true,
-		///				"name": "Preset 1"
-		///			}
-		///		}
-		/// }
-		/// </code>
-		/// </example>
-		/// <example>
-		/// <code>
-		/// "properties": {
-		///		"inputNames": {
-		///			"input1": "Input 1",
-		///			"input2": "Input 2"		
-		///		}
-		/// }
-		/// </code>
-		/// </example>
-		[JsonProperty("DeviceDictionary")]
-		public Dictionary<string, EssentialsPluginConfigObjectDictionaryTemplate> DeviceDictionary { get; set; }
 
 		/// <summary>
 		/// Constuctor
@@ -134,46 +104,6 @@ namespace CCDDisplay
 		/// </remarks>
 		public CCDDisplayConfig()
 		{
-			DeviceDictionary = new Dictionary<string, EssentialsPluginConfigObjectDictionaryTemplate>();
 		}
-	}
-
-	/// <summary>
-	/// Example plugin configuration dictionary object
-	/// </summary>
-	/// <remarks>
-	/// This is an example collection of configuration objects.  This can be modified or deleted as needed for the plugin being built.
-	/// </remarks>
-	/// <example>
-	/// <code>
-	/// "properties": {
-	///		"dictionary": {
-	///			"item1": {
-	///				"name": "Item 1 Name",
-	///				"value": "Item 1 Value"
-	///			}
-	///		}
-	/// }
-	/// </code>
-	/// </example>
-	public class EssentialsPluginConfigObjectDictionaryTemplate
-	{
-		/// <summary>
-		/// Serializes collection name property
-		/// </summary>
-		/// <remarks>
-		/// This is an example collection of configuration objects.  This can be modified or deleted as needed for the plugin being built.
-		/// </remarks>
-		[JsonProperty("name")]
-		public string Name { get; set; }
-
-		/// <summary>
-		/// Serializes collection value property
-		/// </summary>
-		/// <remarks>
-		/// This is an example collection of configuration objects.  This can be modified or deleted as needed for the plugin being built.
-		/// </remarks>
-		[JsonProperty("value")]
-		public uint Value { get; set; }
 	}
 }

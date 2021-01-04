@@ -30,7 +30,7 @@ namespace CCDDisplay
         public CCDDisplayFactory()
         {
             // Set the minimum Essentials Framework Version
-			MinimumEssentialsFrameworkVersion = "1.6.4";
+			MinimumEssentialsFrameworkVersion = "1.6.9";
 
             // In the constructor we initialize the list with the typenames that will build an instance of this device
             TypeNames = new List<string>() { "ccddisplay" };
