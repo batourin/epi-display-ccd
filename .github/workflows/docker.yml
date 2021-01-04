@@ -8,7 +8,9 @@ on:
       - release/*
       - main
       - development
-
+  pull_request:
+    branches:
+      - development
 env:
   # solution path doesn't need slashes unless there it is multiple folders deep
   # solution name does not include extension. .sln is assumed
@@ -52,7 +54,8 @@ jobs:
         shell: powershell
         run: |
           $version = ./.github/scripts/GenerateVersionNumber.ps1
-          Write-Output "::set-env name=VERSION::$version"
+          echo "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          #Write-Output "::set-env name=VERSION::$version"
       # Use the version number to set the version of the assemblies
       - name: Update AssemblyInfo.cs
         shell: powershell
