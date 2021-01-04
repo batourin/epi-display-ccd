@@ -262,8 +262,8 @@ namespace CCDDisplay
 
                 case DisplayStateObjects.PoweredOff:
                     PowerIsOnFeedback.FireUpdate();
-
                     break;
+
                 case DisplayStateObjects.CoolingDown:
                 case DisplayStateObjects.CooledDown:
                     IsCoolingDownFeedback.FireUpdate();
@@ -294,8 +294,6 @@ namespace CCDDisplay
 
                 case DisplayStateObjects.Audio:
                     break;
-
-            
             }
         }
 
@@ -356,11 +354,6 @@ namespace CCDDisplay
         protected override Func<string> CurrentInputFeedbackFunc
         {
             get { return () => _display.InputSource.InputType.ToString(); }
-        }
-
-        public override void ExecuteSwitch(object selector)
-        {
-            throw new System.NotImplementedException();
         }
 
         // DisplayBase
@@ -554,11 +547,20 @@ namespace CCDDisplay
         public void ExecuteSwitch(object inputSelector, object outputSelector, eRoutingSignalType signalType)
         {
             Debug.Console(2, this, "Input Selector = {0}", inputSelector.ToString());
-            var handler = inputSelector as Action;
+            ExecuteSwitch(inputSelector);
+        }
+
+        #endregion
+
+        #region DisplayBase abstract class implementation
+        
+        public override void ExecuteSwitch(object selector)
+        {
+            var handler = selector as Action;
             if (handler != null)
                 handler();
         }
-
+        
         #endregion
 
         #region IRoutingOutputs Members
