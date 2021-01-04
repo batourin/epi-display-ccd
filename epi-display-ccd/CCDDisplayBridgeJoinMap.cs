@@ -1,6 +1,6 @@
 ﻿using PepperDash.Essentials.Core;
 
-namespace EssentialsPluginTemplate
+namespace CCDDisplay
 {
 	/// <summary>
 	/// Plugin device Bridge Join Map
@@ -10,9 +10,9 @@ namespace EssentialsPluginTemplate
 	/// </remarks>
 	/// <see cref="PepperDash.Essentials.Core.Bridges"/>
 	/// <example>
-	/// "EssentialsPluginBridgeJoinMapTemplate" renamed to "SamsungMdcBridgeJoinMap"
+	/// "CCDDisplayBridgeJoinMap" renamed to "SamsungMdcBridgeJoinMap"
 	/// </example>
-	public class EssentialsPluginBridgeJoinMapTemplate : JoinMapBaseAdvanced
+	public class CCDDisplayBridgeJoinMap : JoinMapBaseAdvanced
 	{
 		#region Digital
 
@@ -93,8 +93,8 @@ namespace EssentialsPluginTemplate
 		/// Plugin device BridgeJoinMap constructor
 		/// </summary>
 		/// <param name="joinStart">This will be the join it starts on the EISC bridge</param>
-		public EssentialsPluginBridgeJoinMapTemplate(uint joinStart)
-			: base(joinStart, typeof(EssentialsPluginBridgeJoinMapTemplate))
+		public CCDDisplayBridgeJoinMap(uint joinStart)
+			: base(joinStart, typeof(CCDDisplayBridgeJoinMap))
 		{
 		}
 	}
