@@ -15,6 +15,7 @@ using Crestron.SimplSharpPro.DM;
 using Crestron.RAD.Common.BasicDriver;
 using Crestron.RAD.Common.Enums;
 using Crestron.RAD.Common.Interfaces;
+using Crestron.RAD.Common.Transports;
 using Crestron.RAD.ProTransports;
 
 namespace CCDDisplay
@@ -114,8 +115,14 @@ namespace CCDDisplay
                     var serialDriver = _radDevice as ISerialComport;
                     if (serialDriver != null)
                     {
+                        ComPort.ComPortSpec configComSpec = CommFactory.GetControlPropertiesConfig(dc).ComParams;
+                        // TODO: detect not supplied ComParams in control and initialize with driver default values
+                        // End user override from control.ComParams
+
+                        // TODO: Crestron stupidity - CCD/RAD ComPortSpec is not the same as Crestron.SimpleSharpPro.ComPort.ComPortSpec
+                        serialTransport.SetComPortSpec(TranslateComPortSpec(configComSpec));
                         // Driver default ComSpecs
-                        serialTransport.SetComPortSpec(serialDriver.ComSpec);
+                        //serialTransport.SetComPortSpec(serialDriver.ComSpec);
 
                         // Initialize the transport
                         serialDriver.Initialize(serialTransport);
@@ -143,6 +150,151 @@ namespace CCDDisplay
             return new CCDDisplayDevice(dc.Key, dc.Name, propertiesConfig, _radDevice);
         }
 
+
+
+        private static Crestron.RAD.Common.Transports.ComPortSpec TranslateComPortSpec(Crestron.SimplSharpPro.ComPort.ComPortSpec comSpec)
+        {
+            Crestron.RAD.Common.Transports.ComPortSpec radComSpec = new Crestron.RAD.Common.Transports.ComPortSpec()
+            {
+                BaudRate = eComBaudRates.NotSpecified,
+                DataBits = eComDataBits.NotSpecified,
+                HardwareHandShake = eComHardwareHandshakeType.NotSpecified,
+                Parity = eComParityType.NotSpecified,
+                Protocol = eComProtocolType.NotSpecified,
+                SoftwareHandshake = eComSoftwareHandshakeType.NotSpecified,
+                StopBits = eComStopBits.NotSpecified,
+                ReportCTSChanges = comSpec.ReportCTSChanges
+            };
+
+            switch (comSpec.BaudRate)
+            {
+                case ComPort.eComBaudRates.ComspecBaudRate300:
+                    radComSpec.BaudRate = eComBaudRates.ComspecBaudRate300;
+                    break;
+                case ComPort.eComBaudRates.ComspecBaudRate600:
+                    radComSpec.BaudRate = eComBaudRates.ComspecBaudRate600;
+                    break;
+                case ComPort.eComBaudRates.ComspecBaudRate1200:
+                    radComSpec.BaudRate = eComBaudRates.ComspecBaudRate1200;
+                    break;
+                case ComPort.eComBaudRates.ComspecBaudRate1800:
+                    radComSpec.BaudRate = eComBaudRates.ComspecBaudRate1800;
+                    break;
+                case ComPort.eComBaudRates.ComspecBaudRate2400:
+                    radComSpec.BaudRate = eComBaudRates.ComspecBaudRate2400;
+                    break;
+                case ComPort.eComBaudRates.ComspecBaudRate3600:
+                    radComSpec.BaudRate = eComBaudRates.ComspecBaudRate3600;
+                    break;
+                case ComPort.eComBaudRates.ComspecBaudRate7200:
+                    radComSpec.BaudRate = eComBaudRates.ComspecBaudRate7200;
+                    break;
+                case ComPort.eComBaudRates.ComspecBaudRate9600:
+                    radComSpec.BaudRate = eComBaudRates.ComspecBaudRate9600;
+                    break;
+                case ComPort.eComBaudRates.ComspecBaudRate14400:
+                    radComSpec.BaudRate = eComBaudRates.ComspecBaudRate14400;
+                    break;
+                case ComPort.eComBaudRates.ComspecBaudRate19200:
+                    radComSpec.BaudRate = eComBaudRates.ComspecBaudRate19200;
+                    break;
+                case ComPort.eComBaudRates.ComspecBaudRate28800:
+                    radComSpec.BaudRate = eComBaudRates.ComspecBaudRate28800;
+                    break;
+                case ComPort.eComBaudRates.ComspecBaudRate38400:
+                    radComSpec.BaudRate = eComBaudRates.ComspecBaudRate38400;
+                    break;
+                case ComPort.eComBaudRates.ComspecBaudRate57600:
+                    radComSpec.BaudRate = eComBaudRates.ComspecBaudRate57600;
+                    break;
+                case ComPort.eComBaudRates.ComspecBaudRate115200:
+                    radComSpec.BaudRate = eComBaudRates.ComspecBaudRate115200;
+                    break;
+            }
+
+            switch (comSpec.DataBits)
+            {
+                case ComPort.eComDataBits.ComspecDataBits7:
+                    radComSpec.DataBits = eComDataBits.ComspecDataBits7;
+                    break;
+                case ComPort.eComDataBits.ComspecDataBits8:
+                    radComSpec.DataBits = eComDataBits.ComspecDataBits8;
+                    break;
+            }
+
+            switch (comSpec.HardwareHandShake)
+            {
+                case ComPort.eComHardwareHandshakeType.ComspecHardwareHandshakeCTS:
+                    radComSpec.HardwareHandShake = eComHardwareHandshakeType.ComspecHardwareHandshakeCTS;
+                    break;
+                case ComPort.eComHardwareHandshakeType.ComspecHardwareHandshakeNone:
+                    radComSpec.HardwareHandShake = eComHardwareHandshakeType.ComspecHardwareHandshakeNone;
+                    break;
+                case ComPort.eComHardwareHandshakeType.ComspecHardwareHandshakeRTS:
+                    radComSpec.HardwareHandShake = eComHardwareHandshakeType.ComspecHardwareHandshakeRTS;
+                    break;
+                case ComPort.eComHardwareHandshakeType.ComspecHardwareHandshakeRTSCTS:
+                    radComSpec.HardwareHandShake = eComHardwareHandshakeType.ComspecHardwareHandshakeRTSCTS;
+                    break;
+            }
+
+            switch (comSpec.Parity)
+            {
+                case ComPort.eComParityType.ComspecParityEven:
+                    radComSpec.Parity = eComParityType.ComspecParityEven;
+                    break;
+                case ComPort.eComParityType.ComspecParityNone:
+                    radComSpec.Parity = eComParityType.ComspecParityNone;
+                    break;
+                case ComPort.eComParityType.ComspecParityOdd:
+                    radComSpec.Parity = eComParityType.ComspecParityOdd;
+                    break;
+                case ComPort.eComParityType.ComspecParityMark:
+                    radComSpec.Parity = eComParityType.NotSpecified;
+                    break;
+            }
+
+            switch (comSpec.Protocol)
+            {
+                case ComPort.eComProtocolType.ComspecProtocolRS232:
+                    radComSpec.Protocol = eComProtocolType.ComspecProtocolRS232;
+                    break;
+                case ComPort.eComProtocolType.ComspecProtocolRS422:
+                    radComSpec.Protocol = eComProtocolType.ComspecProtocolRS422;
+                    break;
+                case ComPort.eComProtocolType.ComspecProtocolRS485:
+                    radComSpec.Protocol = eComProtocolType.ComspecProtocolRS485;
+                    break;
+            }
+
+            switch (comSpec.SoftwareHandshake)
+            {
+                case ComPort.eComSoftwareHandshakeType.ComspecSoftwareHandshakeNone:
+                    radComSpec.SoftwareHandshake = eComSoftwareHandshakeType.ComspecSoftwareHandshakeNone;
+                    break;
+                case ComPort.eComSoftwareHandshakeType.ComspecSoftwareHandshakeXON:
+                    radComSpec.SoftwareHandshake = eComSoftwareHandshakeType.ComspecSoftwareHandshakeXON;
+                    break;
+                case ComPort.eComSoftwareHandshakeType.ComspecSoftwareHandshakeXONR:
+                    radComSpec.SoftwareHandshake = eComSoftwareHandshakeType.ComspecSoftwareHandshakeXONR;
+                    break;
+                case ComPort.eComSoftwareHandshakeType.ComspecSoftwareHandshakeXONT:
+                    radComSpec.SoftwareHandshake = eComSoftwareHandshakeType.ComspecSoftwareHandshakeXONT;
+                    break;
+            }
+
+            switch (comSpec.StopBits)
+            {
+                case ComPort.eComStopBits.ComspecStopBits1:
+                    radComSpec.StopBits = eComStopBits.ComspecStopBits1;
+                    break;
+                case ComPort.eComStopBits.ComspecStopBits2:
+                    radComSpec.StopBits = eComStopBits.ComspecStopBits2;
+                    break;
+            }
+
+            return radComSpec;
+        }
     }
 }
 
