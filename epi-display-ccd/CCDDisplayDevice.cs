@@ -44,8 +44,6 @@ namespace CCDDisplay
         {
             Debug.Console(0, this, "Constructing new {0} instance", name);
 
-            // TODO [ ] Update the constructor as needed for the plugin device being developed
-
             _config = config;
             _display = display;
             _displayStateChangeAction = new Action<DisplayStateObjects, IBasicVideoDisplay, byte>(displayStateChangeEvent);
@@ -519,7 +517,6 @@ namespace CCDDisplay
 
         private void UpdateFeedbacks()
         {
-            // TODO [ ] Update as needed for the plugin being developed
             ConnectFeedback.FireUpdate();
             StatusFeedback.FireUpdate();
         }
