@@ -38,6 +38,8 @@ Example of usage in the configuration file:
           }
         }
 ```
+If transport is ISerialComport, "comParams" can be supplied in the "control" section or skipped - plugin will load CCD driver defaults for ComPortSpecs.
+
 ## Cloning Instructions
 
 After forking this repository into your own GitHub space, you can create a new repository using this one as the template.  Then you must install the necessary dependencies as indicated below.
