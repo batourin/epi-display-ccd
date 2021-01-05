@@ -115,14 +115,22 @@ namespace CCDDisplay
                     var serialDriver = _radDevice as ISerialComport;
                     if (serialDriver != null)
                     {
-                        ComPort.ComPortSpec configComSpec = CommFactory.GetControlPropertiesConfig(dc).ComParams;
-                        // TODO: detect not supplied ComParams in control and initialize with driver default values
-                        // End user override from control.ComParams
+                        if (dc.Properties.SelectToken("control.comParams", false) != null)
+                        {
+                            /// control.comParams object supplied in configuration, using defined there ComParams
+                            Debug.Console(0, "[{0}] Factory: loading ComParams from config for device {1}", dc.Key, dc.Name);
+                            ComPort.ComPortSpec configComSpec = CommFactory.GetControlPropertiesConfig(dc).ComParams;
 
-                        // TODO: Crestron stupidity - CCD/RAD ComPortSpec is not the same as Crestron.SimpleSharpPro.ComPort.ComPortSpec
-                        serialTransport.SetComPortSpec(TranslateComPortSpec(configComSpec));
-                        // Driver default ComSpecs
-                        //serialTransport.SetComPortSpec(serialDriver.ComSpec);
+                            /// TODO: find better way - Crestron stupidity - CCD/RAD ComPortSpec is not the same as Crestron.SimpleSharpPro.ComPort.ComPortSpec
+                            serialTransport.SetComPortSpec(TranslateComPortSpec(configComSpec));
+
+                        }
+                        else
+                        {
+                            /// Driver's default ComSpecs
+                            Debug.Console(0, "[{0}] Factory: loading default ComParams from driver for device {1}", dc.Key, dc.Name);
+                            serialTransport.SetComPortSpec(serialDriver.ComSpec);
+                        }
 
                         // Initialize the transport
                         serialDriver.Initialize(serialTransport);
