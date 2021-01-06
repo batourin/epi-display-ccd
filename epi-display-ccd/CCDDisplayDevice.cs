@@ -21,7 +21,7 @@ namespace CCDDisplay
 	/// Plugin device template for third party devices that use IBasicCommunication
 	/// </summary>
     [Description("Crestron Certified Drivers Display")]
-    public class CCDDisplayDevice : TwoWayDisplayBase, IHasPowerControlWithFeedback, IWarmingCooling, IBasicVolumeWithFeedback, IRoutingNumericWithFeedback, ICommunicationMonitor, IBridgeAdvanced
+    public class CCDDisplayDevice : TwoWayDisplayBase, IBasicVolumeWithFeedback, ICommunicationMonitor, IBridgeAdvanced
     {
         /// <summary>
         /// It is often desirable to store the config
@@ -175,10 +175,6 @@ namespace CCDDisplay
                 }
             }
 
-            // TODO: Figure out what is Outport for display device, do we need it?
-            OutputPorts = new RoutingPortCollection<RoutingOutputPort>();
-            OutputPorts.Add(new RoutingOutputPort("Screen", eRoutingSignalType.AudioVideo, eRoutingPortConnectionType.BackplaneOnly, null, this));
-
             CommunicationMonitor = new CCDCommunicationMonitor(this, _display, 12000, 30000);
 
             CrestronConsole.AddNewConsoleCommand((s) => 
@@ -281,10 +277,9 @@ namespace CCDDisplay
                     break;
 
                 case DisplayStateObjects.Input:
-                    var localInputPort = InputPorts.FirstOrDefault( p => (VideoConnections)p.FeedbackMatchObject == _display.InputSource.InputType);
+                    var newInputPort = InputPorts.FirstOrDefault( p => (VideoConnections)p.FeedbackMatchObject == _display.InputSource.InputType);
                     CurrentInputFeedback.FireUpdate();
-                    // TODO: First argument can be fake OutputPort - OutputPort.First() which is "Screen"
-                    OnSwitchChange(new RoutingNumericEventArgs(null, localInputPort, eRoutingSignalType.AudioVideo));
+                    OnSwitchChange(new RoutingNumericEventArgs(null, newInputPort, eRoutingSignalType.AudioVideo));
                     break;
 
                 case DisplayStateObjects.LampHours:
@@ -342,42 +337,34 @@ namespace CCDDisplay
             return true;
         }
 
-        #region TwoWayDisplayBase abstract class implementation
+        #region TwoWayDisplayBase abstract class overrides
 
-        protected override Func<bool> PowerIsOnFeedbackFunc
-        {
-            get { return () => _display.PowerIsOn; }
-        }
+        protected override Func<bool> PowerIsOnFeedbackFunc { get { return () => _display.PowerIsOn; } }
 
-        protected override Func<string> CurrentInputFeedbackFunc
-        {
-            get { return () => _display.InputSource.InputType.ToString(); }
-        }
+        protected override Func<string> CurrentInputFeedbackFunc { get { return () => _display.InputSource.InputType.ToString(); } }
 
-        // DisplayBase
-        protected override Func<bool> IsCoolingDownFeedbackFunc
-        {
-            get { return () => _display.CoolingDown; }
-        }
+        // TwoWayDisplayBase: IHasPowerControlWithFeedback: IHasPowerControl.PowerOff
+        public override void PowerOff() { _display.PowerOff(); }
 
-        protected override Func<bool> IsWarmingUpFeedbackFunc
-        {
-            get { return () => _display.WarmingUp; }
-        }
+        // TwoWayDisplayBase: IHasPowerControlWithFeedback: IHasPowerControl.PowerOn
+        public override void PowerOn() { _display.PowerOn(); }
 
-        public override void PowerOff()
-        {
-            _display.PowerOff();
-        }
+        // TwoWayDisplayBase: IHasPowerControlWithFeedback: IHasPowerControl.PowerToggle
+        public override void PowerToggle() { _display.PowerToggle(); }
 
-        public override void PowerOn()
-        {
-            _display.PowerOn();
-        }
+        #endregion
 
-        public override void PowerToggle()
+        #region DisplayBase abstract class overrides
+
+        protected override Func<bool> IsCoolingDownFeedbackFunc { get { return () => _display.CoolingDown; } }
+
+        protected override Func<bool> IsWarmingUpFeedbackFunc { get { return () => _display.WarmingUp; } }
+
+        public override void ExecuteSwitch(object selector)
         {
-            _display.PowerToggle();
+            var handler = selector as Action;
+            if (handler != null)
+                handler();
         }
 
         #endregion
@@ -523,48 +510,6 @@ namespace CCDDisplay
 
         #endregion
 
-
-        #region IRoutingNumeric Members
-
-        public void ExecuteNumericSwitch(ushort input, ushort output, eRoutingSignalType type)
-        {
-
-            if (!Enum.IsDefined(typeof(VideoConnections), input))
-            {
-                Debug.Console(2, this, "Invalid Video Source Index : {0}", input);
-                return;
-            }
-            _display.SetInputSource((VideoConnections) input);
-        }
-
-        #endregion
-
-        #region IRouting Members
-
-        public void ExecuteSwitch(object inputSelector, object outputSelector, eRoutingSignalType signalType)
-        {
-            Debug.Console(2, this, "Input Selector = {0}", inputSelector.ToString());
-            ExecuteSwitch(inputSelector);
-        }
-
-        #endregion
-
-        #region DisplayBase abstract class implementation
-        
-        public override void ExecuteSwitch(object selector)
-        {
-            var handler = selector as Action;
-            if (handler != null)
-                handler();
-        }
-        
-        #endregion
-
-        #region IRoutingOutputs Members
-
-        public RoutingPortCollection<RoutingOutputPort> OutputPorts { get; private set; }
-
-        #endregion
     }
 }
 
