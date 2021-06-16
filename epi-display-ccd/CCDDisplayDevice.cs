@@ -28,23 +28,29 @@ namespace CCDDisplay
         /// </summary>
         private CCDDisplayConfig _config;
 
+        /// <summary>
+        /// Holds IBasicCommunication device, so Essentials would properly register serial device
+        /// </summary>
+        private IBasicCommunication _comm;
+
         private IBasicVideoDisplay _display;
 
         private Action<DisplayStateObjects, IBasicVideoDisplay, byte> _displayStateChangeAction;
 
         /// <summary>
-        /// CCDDisplay Plugin device constructor for ISerialComport transport
+        /// CCDDisplay Plugin device constructor
         /// </summary>
         /// <param name="key"></param>
         /// <param name="name"></param>
         /// <param name="config"></param>
         /// <param name="display">Loaded and initialized instance of CCD Display driver instance</param>
-        public CCDDisplayDevice(string key, string name, CCDDisplayConfig config, IBasicVideoDisplay display)
+        public CCDDisplayDevice(string key, string name, CCDDisplayConfig config, IBasicVideoDisplay display, IBasicCommunication comm)
             : base(key, name)
         {
             Debug.Console(0, this, "Constructing new {0} instance", name);
 
             _config = config;
+            _comm = comm;
             _display = display;
             _displayStateChangeAction = new Action<DisplayStateObjects, IBasicVideoDisplay, byte>(displayStateChangeEvent);
 

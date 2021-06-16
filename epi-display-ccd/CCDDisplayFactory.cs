@@ -102,6 +102,7 @@ namespace CCDDisplay
             }
 
             // Initialize transport
+            IBasicCommunication comm = null;
             switch (propertiesConfig.Transport)
             {
                 case "ITcp":
@@ -110,6 +111,7 @@ namespace CCDDisplay
                     ((ITcp)_radDevice).Initialize(IPAddress.Parse(propertiesConfig.Control.TcpSshProperties.Address), port);
                     break;
                 case "ISerialComport":
+                    comm = CommFactory.CreateCommForDevice(dc);
                     ComPort comPort = CommFactory.GetComPort(CommFactory.GetControlPropertiesConfig(dc));
                     var serialTransport = new SerialTransport(comPort);
                     var serialDriver = _radDevice as ISerialComport;
@@ -155,7 +157,7 @@ namespace CCDDisplay
                     break;
             }
 
-            return new CCDDisplayDevice(dc.Key, dc.Name, propertiesConfig, _radDevice);
+            return new CCDDisplayDevice(dc.Key, dc.Name, propertiesConfig, _radDevice, comm);
         }
 
 
