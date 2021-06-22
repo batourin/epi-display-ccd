@@ -111,8 +111,19 @@ namespace CCDDisplay
                     ((ITcp)_radDevice).Initialize(IPAddress.Parse(propertiesConfig.Control.TcpSshProperties.Address), port);
                     break;
                 case "ISerialComport":
-                    comm = CommFactory.CreateCommForDevice(dc);
+                    //comm = CommFactory.CreateCommForDevice(dc);
                     ComPort comPort = CommFactory.GetComPort(CommFactory.GetControlPropertiesConfig(dc));
+		    
+		    if (comPort.Parent is CrestronControlSystem)
+            	    {
+                        var result = Port.Register();
+                        if (result != eDeviceRegistrationUnRegistrationResponse.Success)
+                        {
+                            Debug.Console(0, this, "ERROR: Cannot register Com port: {0}", result);
+                            return; // false
+                        }
+                    }
+		    
                     var serialTransport = new SerialTransport(comPort);
                     var serialDriver = _radDevice as ISerialComport;
                     if (serialDriver != null)
