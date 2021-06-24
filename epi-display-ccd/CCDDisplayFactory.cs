@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Config;
@@ -114,14 +114,16 @@ namespace CCDDisplay
                     //comm = CommFactory.CreateCommForDevice(dc);
                     ComPort comPort = CommFactory.GetComPort(CommFactory.GetControlPropertiesConfig(dc));
 		    
-		    if (comPort.Parent is CrestronControlSystem)
+		            if (comPort.Parent is CrestronControlSystem)
             	    {
-                        var result = Port.Register();
+                        var result = comPort.Register();
                         if (result != eDeviceRegistrationUnRegistrationResponse.Success)
                         {
-                            Debug.Console(0, this, "ERROR: Cannot register Com port: {0}", result);
+                            Debug.Console(0, "[{0}] ERROR: Factory: Cannot register Com port: {0}", result);
                             return; // false
                         }
+                        else
+                            Debug.Console(0, "[{0}] Factory: registered Com port: {0} as parent is ControlSystem", comPort.Name);
                     }
 		    
                     var serialTransport = new SerialTransport(comPort);
