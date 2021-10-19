@@ -83,6 +83,14 @@ namespace CCDDisplay
             Feedbacks.Add(VolumeLevelFeedback);
             Feedbacks.Add(MuteFeedback);
 
+            VideoMuteFeedback = new BoolFeedback(() => _display.VideoMuteIsOn);
+            Feedbacks.Add(VideoMuteFeedback);
+
+            LampHours1Feedback = new IntFeedback(() => {
+                    return (_display.LampHours.Count > 0) ? (int)_display.LampHours[0] : 0;
+            });
+            Feedbacks.Add(LampHours1Feedback);
+
             if (_display.SupportsSetInputSource)
             {
                 foreach (InputDetail input in _display.GetUsableInputs())
@@ -274,6 +282,10 @@ namespace CCDDisplay
                     IsWarmingUpFeedback.FireUpdate();
                     break;
 
+                case DisplayStateObjects.VideoMute:
+                    VideoMuteFeedback.FireUpdate();
+                    break;
+
                 case DisplayStateObjects.Mute:
                     MuteFeedback.FireUpdate();
                     break;
@@ -447,11 +459,21 @@ namespace CCDDisplay
         /// Reports connect feedback through the bridge
         /// </summary>
         public BoolFeedback ConnectFeedback { get; private set; }
+        
+        /// <summary>
+        /// Reports video mute through the bridge
+        /// </summary>
+        public BoolFeedback VideoMuteFeedback { get; private set; }
 
         /// <summary>
         /// Reports socket status feedback through the bridge
         /// </summary>
         public IntFeedback StatusFeedback { get; private set; }
+
+        /// <summary>
+        /// Reports lamp hours 1 feedback through the bridge
+        /// </summary>
+        public IntFeedback LampHours1Feedback { get; private set; }
 
         /// <summary>
         /// Links the plugin device to the EISC bridge
@@ -487,14 +509,23 @@ namespace CCDDisplay
 
             /// eJoinCapabilities.ToFromSIMPL - FromSIMPL action
             trilist.SetBoolSigAction(joinMap.Connect.JoinNumber, sig => Connect = sig);
+            trilist.SetBoolSigAction(joinMap.VideoMuteOn.JoinNumber, sig => _display.VideoMuteOn());
+            trilist.SetBoolSigAction(joinMap.VideoMuteOff.JoinNumber, sig => _display.VideoMuteOff());
+
             /// eJoinCapabilities.ToFromSIMPL - ToSIMPL subscription
             ConnectFeedback.LinkInputSig(trilist.BooleanInput[joinMap.Connect.JoinNumber]);
+            IsWarmingUpFeedback.LinkInputSig(trilist.BooleanInput[joinMap.Warming.JoinNumber]);
+            IsCoolingDownFeedback.LinkInputSig(trilist.BooleanInput[joinMap.Cooling.JoinNumber]);
+            VideoMuteFeedback.LinkInputSig(trilist.BooleanInput[joinMap.VideoMuteOn.JoinNumber]);
 
             /// eJoinCapabilities.ToFromSIMPL - ToSIMPL subscription
             StatusFeedback.LinkInputSig(trilist.UShortInput[joinMap.Status.JoinNumber]);
+            LampHours1Feedback.LinkInputSig(trilist.UShortInput[joinMap.LampHours1.JoinNumber]);
 
-            /// eJoinCapabilities.ToSIMPL - set string once as this is not changeble info
+            /// eJoinCapabilities.ToSIMPL - set once as this is not changeble info
             trilist.SetString(joinMap.Driver.JoinNumber, _display.GetType().AssemblyQualifiedName);
+            trilist.SetBool(joinMap.VideoMuteSupported.JoinNumber, _display.SupportsVideoMuteFeedback);
+            trilist.SetBool(joinMap.LampHoursSupported.JoinNumber, _display.SupportsLampHours);
 
             UpdateFeedbacks();
 

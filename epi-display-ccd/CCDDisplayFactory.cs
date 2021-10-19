@@ -120,10 +120,10 @@ namespace CCDDisplay
                         if (result != eDeviceRegistrationUnRegistrationResponse.Success)
                         {
                             Debug.Console(0, "[{0}] ERROR: Factory: Cannot register Com port: {0}", result);
-                            return; // false
+                            return null; // false
                         }
                         else
-                            Debug.Console(0, "[{0}] Factory: registered Com port: {0} as parent is ControlSystem", comPort.Name);
+                            Debug.Console(0, "[{0}] Factory: registered Com port: {0} as parent is ControlSystem", comPort.DeviceName);
                     }
 		    
                     var serialTransport = new SerialTransport(comPort);
