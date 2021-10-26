@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
-// For Basic SIMPL# Classes
-// For Basic SIMPL#Pro classes
+
 using Crestron.SimplSharp;
 using Crestron.SimplSharpPro;
+using Crestron.SimplSharpPro.DM;
 using Crestron.SimplSharpPro.DeviceSupport;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
@@ -14,6 +14,9 @@ using PepperDash.Essentials.Core.Bridges;
 using Crestron.RAD.Common;
 using Crestron.RAD.Common.Enums;
 using Crestron.RAD.Common.Interfaces;
+using Crestron.RAD.Common.BasicDriver;
+using Crestron.RAD.Common.Transports;
+using Crestron.RAD.ProTransports;
 
 namespace CCDDisplay
 {
@@ -33,6 +36,9 @@ namespace CCDDisplay
         /// </summary>
         private IBasicCommunication _comm;
 
+        private bool _useConfigComSpec;
+        private string _key;
+        private string _name;
         private IBasicVideoDisplay _display;
 
         private Action<DisplayStateObjects, IBasicVideoDisplay, byte> _displayStateChangeAction;
@@ -44,14 +50,16 @@ namespace CCDDisplay
         /// <param name="name"></param>
         /// <param name="config"></param>
         /// <param name="display">Loaded and initialized instance of CCD Display driver instance</param>
-        public CCDDisplayDevice(string key, string name, CCDDisplayConfig config, IBasicVideoDisplay display, IBasicCommunication comm)
+        public CCDDisplayDevice(string key, string name, CCDDisplayConfig config, IBasicVideoDisplay display, bool useConfigComSpec)
             : base(key, name)
         {
             Debug.Console(0, this, "Constructing new {0} instance", name);
 
             _config = config;
-            _comm = comm;
             _display = display;
+            _key = key;
+            _name = name;
+            _useConfigComSpec = useConfigComSpec;
             _displayStateChangeAction = new Action<DisplayStateObjects, IBasicVideoDisplay, byte>(displayStateChangeEvent);
 
             // Set Display Id
@@ -82,6 +90,14 @@ namespace CCDDisplay
             MuteFeedback = new BoolFeedback(() => _display.Muted);
             Feedbacks.Add(VolumeLevelFeedback);
             Feedbacks.Add(MuteFeedback);
+
+            VideoMuteFeedback = new BoolFeedback(() => _display.VideoMuteIsOn);
+            Feedbacks.Add(VideoMuteFeedback);
+
+            LampHours1Feedback = new IntFeedback(() => {
+                    return (_display.LampHours.Count > 0) ? (int)_display.LampHours[0] : 0;
+            });
+            Feedbacks.Add(LampHours1Feedback);
 
             if (_display.SupportsSetInputSource)
             {
@@ -183,6 +199,11 @@ namespace CCDDisplay
 
             CommunicationMonitor = new CCDCommunicationMonitor(this, _display, 12000, 30000);
 
+            AddPostActivationAction(() =>
+            {
+                InitTransport();
+            });
+
             CrestronConsole.AddNewConsoleCommand((s) => 
                 {
                     StringBuilder sb = new StringBuilder();
@@ -274,6 +295,10 @@ namespace CCDDisplay
                     IsWarmingUpFeedback.FireUpdate();
                     break;
 
+                case DisplayStateObjects.VideoMute:
+                    VideoMuteFeedback.FireUpdate();
+                    break;
+
                 case DisplayStateObjects.Mute:
                     MuteFeedback.FireUpdate();
                     break;
@@ -292,6 +317,76 @@ namespace CCDDisplay
                     break;
 
                 case DisplayStateObjects.Audio:
+                    break;
+            }
+        }
+
+        public void InitTransport()
+        {
+            switch (_config.Transport)
+            {
+                case "ITcp":
+                    // If Port supplied in Control parameters, use it, otherwise use default Driver Port
+                    int port = (_config.Control.TcpSshProperties.Port != 0) ? _config.Control.TcpSshProperties.Port : ((ITcp)_display).Port;
+                    ((ITcp)_display).Initialize(IPAddress.Parse(_config.Control.TcpSshProperties.Address), port);
+                    break;
+                case "ISerialComport":
+                    //comm = CommFactory.CreateCommForDevice(dc);
+                    ComPort comPort = CommFactory.GetComPort(_config.Control);
+
+                    if (comPort.Parent is CrestronControlSystem)
+                    {
+                        var result = comPort.Register();
+                        if (result != eDeviceRegistrationUnRegistrationResponse.Success)
+                        {
+                            Debug.Console(0, "[{0}] ERROR: Factory: Cannot register Com port: {0}", result);
+                            return; // false
+                        }
+                        else
+                            Debug.Console(0, "[{0}] Factory: registered Com port: {0} as parent is ControlSystem", comPort.DeviceName);
+                    }
+
+                    var serialTransport = new SerialTransport(comPort);
+                    var serialDriver = _display as ISerialComport;
+                    if (serialDriver != null)
+                    {
+                        if (_useConfigComSpec)
+                        {
+                            /// control.comParams object supplied in configuration, using defined there ComParams
+                            Debug.Console(0, "[{0}] Factory: loading ComParams from config for device {1}", _key, _name);
+                            ComPort.ComPortSpec configComSpec = _config.Control.ComParams;
+
+                            /// TODO: find better way - Crestron stupidity - CCD/RAD ComPortSpec is not the same as Crestron.SimpleSharpPro.ComPort.ComPortSpec
+                            serialTransport.SetComPortSpec(TranslateComPortSpec(configComSpec));
+
+                        }
+                        else
+                        {
+                            /// Driver's default ComSpecs
+                            Debug.Console(0, "[{0}] Factory: loading default ComParams from driver for device {1}", _key, _name);
+                            serialTransport.SetComPortSpec(serialDriver.ComSpec);
+                        }
+
+                        // Initialize the transport
+                        serialDriver.Initialize(serialTransport);
+                    }
+                    break;
+                case "ICecDevice":
+                    Cec cec = CommFactory.GetCecPort(_config.Control) as Cec;
+                    if (cec == null)
+                    {
+                        Debug.Console(0, "[{0}] Factory: Cec transport can't be constructed from `{2}` failed for device {1}", _key, _name, _config.Control.ToString());
+                        return;
+                    }
+                    var cecTransport = new CecTransport();
+                    cecTransport.Initialize(cec);
+                    cecTransport.Start();
+                    var cecDriver = _display as ICecDevice;
+                    if (cecDriver != null)
+                    {
+                        // Initialize the transport
+                        cecDriver.Initialize(cecTransport);
+                    }
                     break;
             }
         }
@@ -447,11 +542,21 @@ namespace CCDDisplay
         /// Reports connect feedback through the bridge
         /// </summary>
         public BoolFeedback ConnectFeedback { get; private set; }
+        
+        /// <summary>
+        /// Reports video mute through the bridge
+        /// </summary>
+        public BoolFeedback VideoMuteFeedback { get; private set; }
 
         /// <summary>
         /// Reports socket status feedback through the bridge
         /// </summary>
         public IntFeedback StatusFeedback { get; private set; }
+
+        /// <summary>
+        /// Reports lamp hours 1 feedback through the bridge
+        /// </summary>
+        public IntFeedback LampHours1Feedback { get; private set; }
 
         /// <summary>
         /// Links the plugin device to the EISC bridge
@@ -487,14 +592,23 @@ namespace CCDDisplay
 
             /// eJoinCapabilities.ToFromSIMPL - FromSIMPL action
             trilist.SetBoolSigAction(joinMap.Connect.JoinNumber, sig => Connect = sig);
+            trilist.SetBoolSigAction(joinMap.VideoMuteOn.JoinNumber, sig => _display.VideoMuteOn());
+            trilist.SetBoolSigAction(joinMap.VideoMuteOff.JoinNumber, sig => _display.VideoMuteOff());
+
             /// eJoinCapabilities.ToFromSIMPL - ToSIMPL subscription
             ConnectFeedback.LinkInputSig(trilist.BooleanInput[joinMap.Connect.JoinNumber]);
+            IsWarmingUpFeedback.LinkInputSig(trilist.BooleanInput[joinMap.Warming.JoinNumber]);
+            IsCoolingDownFeedback.LinkInputSig(trilist.BooleanInput[joinMap.Cooling.JoinNumber]);
+            VideoMuteFeedback.LinkInputSig(trilist.BooleanInput[joinMap.VideoMuteOn.JoinNumber]);
 
             /// eJoinCapabilities.ToFromSIMPL - ToSIMPL subscription
             StatusFeedback.LinkInputSig(trilist.UShortInput[joinMap.Status.JoinNumber]);
+            LampHours1Feedback.LinkInputSig(trilist.UShortInput[joinMap.LampHours1.JoinNumber]);
 
-            /// eJoinCapabilities.ToSIMPL - set string once as this is not changeble info
+            /// eJoinCapabilities.ToSIMPL - set once as this is not changeble info
             trilist.SetString(joinMap.Driver.JoinNumber, _display.GetType().AssemblyQualifiedName);
+            trilist.SetBool(joinMap.VideoMuteSupported.JoinNumber, _display.SupportsVideoMuteFeedback);
+            trilist.SetBool(joinMap.LampHoursSupported.JoinNumber, _display.SupportsLampHours);
 
             UpdateFeedbacks();
 
@@ -515,7 +629,150 @@ namespace CCDDisplay
         }
 
         #endregion
+        
+        private static Crestron.RAD.Common.Transports.ComPortSpec TranslateComPortSpec(Crestron.SimplSharpPro.ComPort.ComPortSpec comSpec)
+        {
+            Crestron.RAD.Common.Transports.ComPortSpec radComSpec = new Crestron.RAD.Common.Transports.ComPortSpec()
+            {
+                BaudRate = eComBaudRates.NotSpecified,
+                DataBits = eComDataBits.NotSpecified,
+                HardwareHandShake = eComHardwareHandshakeType.NotSpecified,
+                Parity = eComParityType.NotSpecified,
+                Protocol = eComProtocolType.NotSpecified,
+                SoftwareHandshake = eComSoftwareHandshakeType.NotSpecified,
+                StopBits = eComStopBits.NotSpecified,
+                ReportCTSChanges = comSpec.ReportCTSChanges
+            };
 
+            switch (comSpec.BaudRate)
+            {
+                case ComPort.eComBaudRates.ComspecBaudRate300:
+                    radComSpec.BaudRate = eComBaudRates.ComspecBaudRate300;
+                    break;
+                case ComPort.eComBaudRates.ComspecBaudRate600:
+                    radComSpec.BaudRate = eComBaudRates.ComspecBaudRate600;
+                    break;
+                case ComPort.eComBaudRates.ComspecBaudRate1200:
+                    radComSpec.BaudRate = eComBaudRates.ComspecBaudRate1200;
+                    break;
+                case ComPort.eComBaudRates.ComspecBaudRate1800:
+                    radComSpec.BaudRate = eComBaudRates.ComspecBaudRate1800;
+                    break;
+                case ComPort.eComBaudRates.ComspecBaudRate2400:
+                    radComSpec.BaudRate = eComBaudRates.ComspecBaudRate2400;
+                    break;
+                case ComPort.eComBaudRates.ComspecBaudRate3600:
+                    radComSpec.BaudRate = eComBaudRates.ComspecBaudRate3600;
+                    break;
+                case ComPort.eComBaudRates.ComspecBaudRate7200:
+                    radComSpec.BaudRate = eComBaudRates.ComspecBaudRate7200;
+                    break;
+                case ComPort.eComBaudRates.ComspecBaudRate9600:
+                    radComSpec.BaudRate = eComBaudRates.ComspecBaudRate9600;
+                    break;
+                case ComPort.eComBaudRates.ComspecBaudRate14400:
+                    radComSpec.BaudRate = eComBaudRates.ComspecBaudRate14400;
+                    break;
+                case ComPort.eComBaudRates.ComspecBaudRate19200:
+                    radComSpec.BaudRate = eComBaudRates.ComspecBaudRate19200;
+                    break;
+                case ComPort.eComBaudRates.ComspecBaudRate28800:
+                    radComSpec.BaudRate = eComBaudRates.ComspecBaudRate28800;
+                    break;
+                case ComPort.eComBaudRates.ComspecBaudRate38400:
+                    radComSpec.BaudRate = eComBaudRates.ComspecBaudRate38400;
+                    break;
+                case ComPort.eComBaudRates.ComspecBaudRate57600:
+                    radComSpec.BaudRate = eComBaudRates.ComspecBaudRate57600;
+                    break;
+                case ComPort.eComBaudRates.ComspecBaudRate115200:
+                    radComSpec.BaudRate = eComBaudRates.ComspecBaudRate115200;
+                    break;
+            }
+
+            switch (comSpec.DataBits)
+            {
+                case ComPort.eComDataBits.ComspecDataBits7:
+                    radComSpec.DataBits = eComDataBits.ComspecDataBits7;
+                    break;
+                case ComPort.eComDataBits.ComspecDataBits8:
+                    radComSpec.DataBits = eComDataBits.ComspecDataBits8;
+                    break;
+            }
+
+            switch (comSpec.HardwareHandShake)
+            {
+                case ComPort.eComHardwareHandshakeType.ComspecHardwareHandshakeCTS:
+                    radComSpec.HardwareHandShake = eComHardwareHandshakeType.ComspecHardwareHandshakeCTS;
+                    break;
+                case ComPort.eComHardwareHandshakeType.ComspecHardwareHandshakeNone:
+                    radComSpec.HardwareHandShake = eComHardwareHandshakeType.ComspecHardwareHandshakeNone;
+                    break;
+                case ComPort.eComHardwareHandshakeType.ComspecHardwareHandshakeRTS:
+                    radComSpec.HardwareHandShake = eComHardwareHandshakeType.ComspecHardwareHandshakeRTS;
+                    break;
+                case ComPort.eComHardwareHandshakeType.ComspecHardwareHandshakeRTSCTS:
+                    radComSpec.HardwareHandShake = eComHardwareHandshakeType.ComspecHardwareHandshakeRTSCTS;
+                    break;
+            }
+
+            switch (comSpec.Parity)
+            {
+                case ComPort.eComParityType.ComspecParityEven:
+                    radComSpec.Parity = eComParityType.ComspecParityEven;
+                    break;
+                case ComPort.eComParityType.ComspecParityNone:
+                    radComSpec.Parity = eComParityType.ComspecParityNone;
+                    break;
+                case ComPort.eComParityType.ComspecParityOdd:
+                    radComSpec.Parity = eComParityType.ComspecParityOdd;
+                    break;
+                case ComPort.eComParityType.ComspecParityMark:
+                    radComSpec.Parity = eComParityType.NotSpecified;
+                    break;
+            }
+
+            switch (comSpec.Protocol)
+            {
+                case ComPort.eComProtocolType.ComspecProtocolRS232:
+                    radComSpec.Protocol = eComProtocolType.ComspecProtocolRS232;
+                    break;
+                case ComPort.eComProtocolType.ComspecProtocolRS422:
+                    radComSpec.Protocol = eComProtocolType.ComspecProtocolRS422;
+                    break;
+                case ComPort.eComProtocolType.ComspecProtocolRS485:
+                    radComSpec.Protocol = eComProtocolType.ComspecProtocolRS485;
+                    break;
+            }
+
+            switch (comSpec.SoftwareHandshake)
+            {
+                case ComPort.eComSoftwareHandshakeType.ComspecSoftwareHandshakeNone:
+                    radComSpec.SoftwareHandshake = eComSoftwareHandshakeType.ComspecSoftwareHandshakeNone;
+                    break;
+                case ComPort.eComSoftwareHandshakeType.ComspecSoftwareHandshakeXON:
+                    radComSpec.SoftwareHandshake = eComSoftwareHandshakeType.ComspecSoftwareHandshakeXON;
+                    break;
+                case ComPort.eComSoftwareHandshakeType.ComspecSoftwareHandshakeXONR:
+                    radComSpec.SoftwareHandshake = eComSoftwareHandshakeType.ComspecSoftwareHandshakeXONR;
+                    break;
+                case ComPort.eComSoftwareHandshakeType.ComspecSoftwareHandshakeXONT:
+                    radComSpec.SoftwareHandshake = eComSoftwareHandshakeType.ComspecSoftwareHandshakeXONT;
+                    break;
+            }
+
+            switch (comSpec.StopBits)
+            {
+                case ComPort.eComStopBits.ComspecStopBits1:
+                    radComSpec.StopBits = eComStopBits.ComspecStopBits1;
+                    break;
+                case ComPort.eComStopBits.ComspecStopBits2:
+                    radComSpec.StopBits = eComStopBits.ComspecStopBits2;
+                    break;
+            }
+
+            return radComSpec;
+        }
     }
 }
 
